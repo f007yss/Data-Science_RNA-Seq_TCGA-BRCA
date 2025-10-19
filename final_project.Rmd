@@ -1,0 +1,176 @@
+---
+title: "final_project_check_in_1"
+output:
+  pdf_document: default
+  html_document: default
+date: "2025-09-23"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+
+## Instructions
+1. Data Preparation:
+  a) Download the Sample RNA-seq  Count Matrix and associated Metadata.
+    i) Ensure that you have both the count matrix and the metadata file available for your analysis.
+```{r}
+fp  <- "C:/Users/JeremyChildress/Downloads/final_project/counts.csv"
+
+
+
+fp_meta <- "C:/Users/JeremyChildress/Downloads/final_project/meta_data.csv"
+meta <- read.csv(fp_meta, header = TRUE, row.names = 1, check.names = FALSE,
+                 stringsAsFactors = FALSE)
+```
+
+2. Gene Selection and Summary Statistics:
+  a) Select One Gene: choose a gene from the dataset that interests you.
+  b) Generate Summary Statistics: Using the count data from the selected gene, compute and report summary statistics, such as mean, median,   standard deviation, minimum, and maximum. 
+```{r}
+counts <- read.csv(fp, header = TRUE, row.names = 1, check.names = FALSE)
+
+counts[] <- lapply(counts, function(x) as.numeric(as.character(x)))
+class(counts)
+
+x <- as.numeric(counts[1, , drop = TRUE])
+summary(x)
+length(x)
+sd(x)
+
+class(x)
+df <- data.frame(expr = x)
+
+```
+
+3. Visualization:
+  a) Create a Histogram: Use ggplot2 to generate a histogram of the count data for the selected gene. This visualization should effectively   display the distribution of the counts. 
+  b) Create a Scatter Plot: Select a second gene from the dataset. Create a scatter plot using ggplot2 to compare the count data of the two   selected genes. 
+  c) Create a Violin Plot: Select one covariate from your metadata. Using the count data from the first gene and the selected covariate,      generate a violin plot that illustrates the distribution of count data based on the covariate. For example, if you choose "primary diagnosis", your plot should display a violin plot for each level in “primary_diagnosis”.
+```{r}
+
+library(ggplot2)
+# histogram
+
+gene_id <- rownames(counts)[1]
+
+ggplot(df, aes(x = expr)) +
+  geom_histogram(binwidth = 200, na.rm = TRUE, fill = "blue", color = "black") +
+  labs(
+    title = paste("Histogram of", gene_id, "Counts"),
+    x = "Counts",
+    y = "Number of Samples"
+  ) +
+  theme_minimal()
+
+# scatter plot
+gene_id_2 <- rownames(counts)[2]
+z <- as.numeric(counts[3, , drop = TRUE])
+
+ggplot(data.frame(x = x, z = z), aes(x = x, y = z)) +
+  geom_point(alpha = 0.7, color = "red") +
+  geom_smooth(method = "lm", formula = y ~ x, se = TRUE, color = "black") +
+  labs(
+    title = paste("Scatter Plot of Counts for", gene_id, "vs.", gene_id_2),
+    x = paste(gene_id, "Counts"),
+    y = paste(gene_id_2, "Counts")
+  ) +
+  theme_minimal()
+
+
+# Violin plot
+gene_id <- rownames(counts)[1]
+expr    <- as.numeric(counts[gene_id, ])
+covar   <- meta[colnames(counts), "ajcc_pathologic_stage"]
+
+df <- data.frame(expr = expr, covar = covar)
+df$covar <- factor(df$covar)
+
+p_violin <- ggplot(df, aes(x = covar, y = expr, fill = covar)) +
+  geom_violin(color = "black", alpha = 0.7, trim = FALSE) +
+  scale_fill_hue() +
+  labs(
+    title = paste("Counts for", gene_id, "by AJCC Pathologic Stage"),
+    x = "AJCC Pathologic Stage",
+    y = paste(gene_id, "Counts")
+  ) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+# Peer suggestion: log scale for better fit; set to FALSE to disable
+use_log10 <- TRUE
+if (use_log10) p_violin <- p_violin + scale_y_log10()
+
+p_violin
+
+
+# Additional plot: Ridgeline density (requires ggridges)
+suppressWarnings(suppressMessages(library(ggridges)))
+
+# Reuse objects from above for consistency
+df_ridge <- df  # df has expr + covar
+
+ggplot(df_ridge, aes(x = expr, y = covar, fill = covar)) +
+  ggridges::geom_density_ridges(alpha = 0.7, rel_min_height = 0.01, scale = 1.2) +
+  labs(
+    title = paste("Ridgeline Density of", gene_id, "Counts by AJCC Pathologic Stage"),
+    x = paste(gene_id, "Counts"),
+    y = "AJCC Pathologic Stage"
+  ) +
+  theme_minimal() +
+  theme(legend.position = "none")
+```
+Heatmap Analysis: 
+Select 10 genes: Choose a set of 10 different genes from the count matrix for your heatmap.
+Generate a Heatmap: Use the ComplexHeatmap package in R to create a heatmap of the count data for the selected genes. 
+Add an Annotation Bar: Include an annotation bar reflecting your chosen covariate for further context and interpretation of the data.
+```{r}
+library(ComplexHeatmap)
+library(circlize)
+
+metadata <- meta
+
+# Select 10 genes
+genes_to_plot <- rownames(counts)[1:10]
+counts_subset <- counts[genes_to_plot, , drop = FALSE]
+
+# Build a data.frame for annotations, then rename columns to clean labels
+ann_df <- data.frame(
+  `Vital Status` = metadata$vital_status,
+  Sex            = metadata$gender,
+  check.names = FALSE
+)
+
+column_ha <- HeatmapAnnotation(
+  df = ann_df,
+  col = list(
+    `Vital Status` = c(Dead = "yellow", Alive = "orange"),
+    Sex            = c(male = "green", female = "purple")
+  ),
+  annotation_name_side = "left"
+)
+
+Heatmap(
+  counts_subset,
+  name = "Counts",
+  top_annotation   = column_ha,
+  show_row_names   = TRUE,
+  show_column_names= FALSE,
+  cluster_columns  = TRUE,
+  cluster_rows     = TRUE,
+  column_title     = "Samples",
+  row_title        = "Genes",
+  heatmap_legend_param = list(title = "Counts")
+)
+
+
+```
+
+4. Record a 3-Minute Video: In this video, explain your selected gene, the summary statistics you computed, and discuss each of your visualizations. See below for more info on the video.
+```{r}
+
+
+```
+
