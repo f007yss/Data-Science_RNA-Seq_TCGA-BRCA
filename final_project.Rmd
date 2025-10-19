@@ -1,9 +1,9 @@
 ---
-title: "final_project_check_in_1"
+title: "Final Project"
 output:
   pdf_document: default
   html_document: default
-date: "2025-09-23"
+date: "2025-10-18"
 ---
 
 ```{r setup, include=FALSE}
