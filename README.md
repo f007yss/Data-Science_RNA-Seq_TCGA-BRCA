@@ -1,8 +1,4 @@
-# Final Project — RNA-seq Explorations (TCGA-BRCA)
-
-**Author:** Jeremy Childress  
-**Course:** Dartmouth – Foundations of Data Science  
-**Date:** October 2025  
+# RNA-seq Explorations (TCGA-BRCA)
 
 ## Project Overview
 This project analyzes pseudo-RNA-seq count data derived from the TCGA-BRCA (breast cancer) cohort.  
